@@ -128,26 +128,28 @@ scDNAMixture_v1 = function(simulation){
     num_cells[i] = as.numeric(readline(prompt = paste("The number of cells in the mixture from contributor ", i, ": ", sep = "")))
     if (is.na(num_cells[i]) | num_cells[i] > num_cells_simulated[i]){
       num_cells[i] = num_cells_simulated[i] # If the user did not enter or the number is greater than the number of cells simulated, number of cells is by default to be the number of cells simulated.
-    } else if (num_cells[i] <= 0 | num_cells[i] != as.integer(num_cells[i])){
-      stop("The number of cells has to be a positive integer.")
+    } else if (num_cells[i] < 0 | num_cells[i] != as.integer(num_cells[i])){
+      stop("The number of cells has to be a non-negative integer.")
     }
   }
   
   num_cells_mixture = sum(num_cells)
   num_cells_mixed = 0
   
-  scDNAMixture = list("NOC" = NOC, "NumCells" = num_cells)
+  scDNAMixture = list("NOCSimulated" = NOC, "NOC" = sum(num_cells != 0), "NumCells" = num_cells)
   
   genotype_mixture = array(NA, dim = c(num_cells_mixture, 20, 2))
   dimnames(genotype_mixture) = list(paste0("Cell_", 1:num_cells_mixture), rownames(simulation[[1]]$GenotypeTrue), c("Allele_1", "Allele_2"))
   
   for (i in 1:NOC){
-    ind_cells_mixture = sample(num_cells_simulated[i], size = num_cells[i], replace = FALSE)
-    genotype = simulation[[i]]$Genotype[ind_cells_mixture, , ]
-    contributor_name = paste("Contributor_", i, sep = "")
-    scDNAMixture[[contributor_name]] = genotype
-    genotype_mixture[(num_cells_mixed + 1):(num_cells_mixed + num_cells[i]), , ] = genotype
-    num_cells_mixed = num_cells_mixed + num_cells[i]
+    if (num_cells[i] > 0){
+      ind_cells_mixture = sample(num_cells_simulated[i], size = num_cells[i], replace = FALSE)
+      genotype = simulation[[i]]$Genotype[ind_cells_mixture, , ]
+      contributor_name = paste("Contributor_", i, sep = "")
+      scDNAMixture[[contributor_name]] = genotype
+      genotype_mixture[(num_cells_mixed + 1):(num_cells_mixed + num_cells[i]), , ] = genotype
+      num_cells_mixed = num_cells_mixed + num_cells[i]
+    }
   }
   
   scDNAMixture[["Mixture"]] = genotype_mixture
