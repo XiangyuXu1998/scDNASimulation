@@ -13,6 +13,18 @@ setwd(this.dir)
 ###### Packages ######
 
 
+###### Dataset ######
+AlleleFreq_all = read.csv("AlleleFreq_all.csv", header = TRUE)
+AlleleFreq_all[is.na(AlleleFreq_all)] = 0
+AlleleFreq_AfAm = read.csv("AlleleFreq_AfAm.csv", header = TRUE)
+AlleleFreq_AfAm[is.na(AlleleFreq_AfAm)] = 0
+AlleleFreq_Cauc = read.csv("AlleleFreq_Cauc.csv", header = TRUE)
+AlleleFreq_Cauc[is.na(AlleleFreq_Cauc)] = 0
+AlleleFreq_Hispanic = read.csv("AlleleFreq_Hispanic.csv", header = TRUE)
+AlleleFreq_Hispanic[is.na(AlleleFreq_Hispanic)] = 0
+AlleleFreq_Asian = read.csv("AlleleFreq_Asian.csv", header = TRUE)
+AlleleFreq_Asian[is.na(AlleleFreq_Asian)] = 0
+
 #####################################################################
 ############################# Version 1 #############################
 #####################################################################
@@ -107,13 +119,6 @@ scDNASimulation_v1 = function(){
 
 }
 
-simulation = scDNASimulation_v1()
-# The result will be a list of contributors, each with population, The number of cells simulated, and the corresponding genotype (2 alleles) at the 20 core CODIS loci, and the true genotype.
-# simulation[[n]] gives the list for the n-th contributor.
-# simulation[[n]]$Population, simulation[[n]]$NumCells, and simulation[[n]]$Genotype gives the corresponding results.
-# Genotype is a three-dimentional array, with the first dimension being the cells (NumCells in total), the second dimension being the loci (20 in total), and the third dimension being the pair of alleles.
-# simulation[[2]]$Genotype[3, 5, ] gives the genotype of the fourth locus (D13S317) of the third cell simulated of the second contributor.
-
 scDNAMixture_v1 = function(simulation){
   
   NOC = length(simulation)
@@ -158,6 +163,117 @@ scDNAMixture_v1 = function(simulation){
   
 }
 
+simulation = scDNASimulation_v1()
+# The result will be a list of contributors, each with population, The number of cells simulated, and the corresponding genotype (2 alleles) at the 20 core CODIS loci, and the true genotype.
+# simulation[[n]] gives the list for the n-th contributor.
+# simulation[[n]]$Population, simulation[[n]]$NumCells, and simulation[[n]]$Genotype gives the corresponding results.
+# Genotype is a three-dimentional array, with the first dimension being the cells (NumCells in total), the second dimension being the loci (20 in total), and the third dimension being the pair of alleles.
+# simulation[[2]]$Genotype[3, 5, ] gives the genotype of the fourth locus (D13S317) of the third cell simulated of the second contributor.
+
 mixture = scDNAMixture_v1(simulation)
 # The result will be a list containing information such as NOC, how many cells in the mixture belongs to each person, their selected cells, and the mixture.
 # In the mixture, the rows are ordered from contributor 1 to the last contributor.
+
+
+
+
+
+
+
+
+
+
+########################################
+########################################
+########################################
+
+library(ggplot2)
+library(dplyr)
+install.packages("patchwork")
+library(patchwork)
+library(ggplotify)
+install.packages("igraph")
+library(igraph)
+
+# ggplot(AlleleFreq_AfAm, aes(x = Alleles, y = CSF1PO)) + geom_bar(stat = "identity")
+# barplot(AlleleFreq_AfAm[,2])
+# plot(AlleleFreq_AfAm[,1],AlleleFreq_AfAm[,2],type="b")
+# plot(AlleleFreq_AfAm[,1],AlleleFreq_AfAm[,2],type="l")
+# lines(AlleleFreq_Cauc[,1],AlleleFreq_Cauc[,2],col=2)
+# lines(AlleleFreq_Hispanic[,1],AlleleFreq_Hispanic[,2],col=3)
+# lines(AlleleFreq_Asian[,1],AlleleFreq_Asian[,2],col=4)
+
+# Plot.allele = function(i){
+#   par(mfrow=c(1,2))
+#   plot(AlleleFreq_AfAm[,1],AlleleFreq_AfAm[,i+1],type="l", xlab = "Alleles", ylab = "Probability", main = colnames(AlleleFreq_AfAm)[i+1])
+#   lines(AlleleFreq_Cauc[,1],AlleleFreq_Cauc[,i+1],col=2)
+#   lines(AlleleFreq_Hispanic[,1],AlleleFreq_Hispanic[,i+1],col=3)
+#   lines(AlleleFreq_Asian[,1],AlleleFreq_Asian[,i+1],col=4)
+# }
+
+# Plot.allele(2)
+
+PlotAlleleFreq = function(i){
+  
+  xmin = floor(min(AlleleFreq_all[AlleleFreq_all[, i + 1] != 0, "Alleles"])) - 1
+  xmax = ceiling(max(AlleleFreq_all[AlleleFreq_all[, i + 1] != 0, "Alleles"])) + 1
+  
+  plot1 = ggplot() +
+    xlim(xmin, xmax) +
+    geom_line(data = AlleleFreq_AfAm, aes(x = Alleles, y = AlleleFreq_AfAm[, i + 1], color = "African American")) +
+    geom_point(data = AlleleFreq_AfAm, aes(x = Alleles, y = AlleleFreq_AfAm[, i + 1], color = "African American")) +
+    geom_line(data = AlleleFreq_Cauc, aes(x = Alleles, y = AlleleFreq_Cauc[, i + 1], color = "Caucasian")) +
+    geom_point(data = AlleleFreq_Cauc, aes(x = Alleles, y = AlleleFreq_Cauc[, i + 1], color = "Caucasian")) +
+    geom_line(data = AlleleFreq_Hispanic, aes(x = Alleles, y = AlleleFreq_Hispanic[, i + 1], color = "Hispanic")) +
+    geom_point(data = AlleleFreq_Hispanic, aes(x = Alleles, y = AlleleFreq_Hispanic[, i + 1], color = "Hispanic")) +
+    geom_line(data = AlleleFreq_Asian, aes(x = Alleles, y = AlleleFreq_Asian[, i + 1], color = "Asian")) +
+    geom_point(data = AlleleFreq_Asian, aes(x = Alleles, y = AlleleFreq_Asian[, i + 1], color = "Asian")) +
+    scale_color_manual(values = c("African American" = "black", 
+                                  "Caucasian" = "blue", 
+                                  "Hispanic" = "red", 
+                                  "Asian" = "orange")) +
+    labs(title = colnames(AlleleFreq_all)[i+1], x = "Alleles", y = "Probability", color = "Population") +
+    theme_minimal() +
+    theme(legend.position = c(0.9, 0.8))
+  
+  plot2 = function(){
+    distance_matrix = as.matrix(dist(scale(rbind(AlleleFreq_AfAm[,i+1], AlleleFreq_Cauc[,i+1], AlleleFreq_Hispanic[,i+1], AlleleFreq_Asian[,i+1])), method = "euclidean"))
+    distance_matrix = 100/distance_matrix
+    diag(distance_matrix) = 0
+    rownames(distance_matrix) = c("AfAm", "Cauc", "Hispanic", "Asian")
+    colnames(distance_matrix) = c("AfAm", "Cauc", "Hispanic", "Asian")
+    g = graph.adjacency(distance_matrix, mode = "undirected", weighted = TRUE)
+  
+    V(g)$color = c("yellow", "yellow", "yellow", "yellow")
+    E(g)$color = "gray"
+  
+    plot(g, edge.width = E(g)$weight, vertex.size = 30, vertex.label.cex = 1.5)
+  }
+  
+  plot2 = as.ggplot(plot2)
+  
+  print(plot1+plot2)
+
+}
+
+dev.new()
+par(mfrow = c(20, 1))
+for (i in 1:20){
+  PlotAlleleFreq(i)
+}
+
+dev.new()
+par(mfrow=c(4,5),mar=c(.5,.5,.5,.5))
+for (i in 1:20){
+  distance_matrix = as.matrix(dist(scale(rbind(AlleleFreq_AfAm[,i+1], AlleleFreq_Cauc[,i+1], AlleleFreq_Hispanic[,i+1], AlleleFreq_Asian[,i+1])), method = "euclidean"))
+  distance_matrix = 100/distance_matrix
+  diag(distance_matrix) = 0
+  rownames(distance_matrix) = c("AfAm", "Cauc", "Hispanic", "Asian")
+  colnames(distance_matrix) = c("AfAm", "Cauc", "Hispanic", "Asian")
+  g = graph.adjacency(distance_matrix, mode = "undirected", weighted = TRUE)
+  
+  V(g)$color = c("yellow", "yellow", "yellow", "yellow")
+  E(g)$color = "gray"
+  
+  plot(g, edge.width = 5 * (E(g)$weight/max(E(g)$weight))^2, vertex.size = 30, vertex.label.cex = 1.5, main = colnames(AlleleFreq_all)[i+1])
+}
